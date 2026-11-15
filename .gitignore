@@ -1,0 +1,19 @@
+# ===== Собранные PBO и подписи (собираются из исходников) =====
+*.pbo
+*.pbo.clean
+*.bisign
+*.bikey
+
+# ===== Данные профиля сервера (создаются игрой) =====
+profiles/
+*.ADM
+*.RPT
+
+# ===== Node =====
+node_modules/
+npm-debug.log*
+
+# ===== ОС =====
+Thumbs.db
+desktop.ini
+.DS_Store

@@ -1,0 +1,39 @@
+{
+  "name": "akm_kit",
+  "items": [
+    {
+      "className": "AKM",
+      "quantity": 1,
+      "health": -1,
+      "attachments": [
+        "Mag_AKM_30Rnd",
+        "AK_Suppressor",
+        "AK_WoodBttstck"
+      ],
+      "cargo": []
+    },
+    {
+      "className": "PlateCarrierVest",
+      "quantity": 1,
+      "health": -1,
+      "attachments": [],
+      "cargo": [
+        {
+          "className": "BandageDressing",
+          "quantity": 2,
+          "health": -1
+        },
+        {
+          "className": "Mag_AKM_30Rnd",
+          "quantity": 2,
+          "health": -1
+        }
+      ]
+    },
+    {
+      "className": "Apple",
+      "quantity": 3,
+      "health": 1
+    }
+  ]
+}

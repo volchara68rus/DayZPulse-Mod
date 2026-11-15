@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>PlayerTracker — demo</title>
+<style>
+  body { margin: 0; background: #10151b; color: #c9d4e0; font: 14px/1.4 system-ui, sans-serif; }
+  header { display: flex; gap: 8px; align-items: center; padding: 10px 14px; border-bottom: 1px solid #1e2833; }
+  input, button { background: #182029; color: #c9d4e0; border: 1px solid #2a3644; border-radius: 6px; padding: 6px 10px; }
+  button { cursor: pointer; }
+  #status { margin-left: auto; font-variant-numeric: tabular-nums; color: #7f8fa1; }
+  #wrap { display: flex; gap: 16px; padding: 14px; align-items: flex-start; }
+  canvas { background: #0b0f14; border: 1px solid #1e2833; border-radius: 8px; }
+  #list { min-width: 280px; }
+  .row { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; border-bottom: 1px solid #182029; font-variant-numeric: tabular-nums; }
+  .dead { color: #c0636d; }
+  .stale { color: #6b7684; }
+  .tag { color: #6b7684; }
+</style>
+</head>
+<body>
+<header>
+  <strong>PlayerTracker</strong>
+  <input id="token" placeholder="token" size="22">
+  <button id="save">Сохранить</button>
+  <span id="status">—</span>
+</header>
+
+<div id="wrap">
+  <canvas id="map" width="640" height="640"></canvas>
+  <div id="list"></div>
+</div>
+
+<script>
+const WORLD = 15360; // сторона карты DayZ в метрах (Чернарусь)
+
+const canvas = document.getElementById('map');
+const ctx = canvas.getContext('2d');
+const listEl = document.getElementById('list');
+const statusEl = document.getElementById('status');
+const tokenEl = document.getElementById('token');
+
+tokenEl.value = localStorage.getItem('pt_token') || '';
+document.getElementById('save').onclick = () => {
+  localStorage.setItem('pt_token', tokenEl.value.trim());
+  refresh();
+};
+
+// x/z мира -> пиксели канваса
+function px(x) { return (x / WORLD) * canvas.width; }
+function py(z) { return (z / WORLD) * canvas.height; }
+
+function grid() {
+  ctx.fillStyle = '#0b0f14';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = '#16202a';
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 8; i++) {
+    const p = (canvas.width / 8) * i;
+    ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, canvas.height); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(canvas.width, p); ctx.stroke();
+  }
+}
+
+async function refresh() {
+  const token = encodeURIComponent(tokenEl.value.trim());
+
+  try {
+    const res = await fetch(`/api/players?token=${token}`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+
+    const players = data.players || [];
+    statusEl.textContent = `${data.count} игроков · ${data.lastIngest || 'нет данных'}`;
+
+    grid();
+
+    listEl.innerHTML = '';
+    for (const p of players) {
+      const x = px(p.pos.x);
+      const y = py(p.pos.z);
+
+      ctx.beginPath();
+      ctx.arc(x, y, p.stale ? 3 : 5, 0, Math.PI * 2);
+      ctx.fillStyle = p.stale ? '#5a6572' : (p.alive ? '#5fd08a' : '#c0636d');
+      ctx.fill();
+
+      if (!p.stale) {
+        ctx.fillStyle = '#c9d4e0';
+        ctx.font = '12px system-ui, sans-serif';
+        ctx.fillText(p.name, x + 8, y + 4);
+      }
+
+      const row = document.createElement('div');
+      row.className = 'row' + (p.stale ? ' stale' : (p.alive ? '' : ' dead'));
+      row.innerHTML =
+        `<span>${p.name || p.id}</span>` +
+        `<span class="tag">${p.pos.x.toFixed(0)} / ${p.pos.z.toFixed(0)}</span>`;
+      listEl.appendChild(row);
+    }
+  } catch (e) {
+    statusEl.textContent = 'ошибка: ' + e.message;
+  }
+}
+
+refresh();
+setInterval(refresh, 2000);
+</script>
+</body>
+</html>

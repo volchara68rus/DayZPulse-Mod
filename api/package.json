@@ -1,0 +1,14 @@
+{
+  "name": "dayz-playertracker-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HTTP API for the DayZ PlayerTracker mod",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "simulate": "node simulate.js"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}
