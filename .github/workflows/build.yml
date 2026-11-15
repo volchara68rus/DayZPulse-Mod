@@ -1,0 +1,83 @@
+name: Сборка мода
+
+# Собирает PBO из исходников через Addon Builder и прикладывает готовый
+# мод-фолдер @DayZPulse к запуску. На тег — релиз.
+#
+# Замечание: Addon Builder входит в DayZ Tools (Steam, бесплатно) и на
+# GitHub-раннере его нет. Поэтому PBO здесь собирается только если
+# секрет ADDON_BUILDER_URL указывает на архив с AddonBuilder.exe.
+# Без него workflow проверяет исходники и упаковывает их одним архивом —
+# собрать PBO можно локально (см. README).
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Код
+        uses: actions/checkout@v4
+
+      - name: Пакет исходников
+        shell: pwsh
+        run: |
+          # Готовим структуру мод-фолдера для ручной сборки.
+          New-Item -ItemType Directory -Force dist\mods\@DayZPulse\Addons | Out-Null
+          Copy-Item DayZPulseCore,DayZPulseAntiCheat -Destination dist\mods\@DayZPulse -Recurse -Force
+          if (Test-Path meta.cpp) { Copy-Item meta.cpp dist\mods\@DayZPulse\meta.cpp -Force }
+
+          # Архив с исходниками (для тех, кто собирает PBO сам).
+          Compress-Archive -Path dist\mods\@DayZPulse\* -DestinationPath dist\DayZPulse-Mod-src.zip -Force
+
+      - name: Артефакт (исходники)
+        uses: actions/upload-artifact@v4
+        with:
+          name: DayZPulse-Mod-src
+          path: dist/DayZPulse-Mod-src.zip
+          if-no-files-found: error
+
+      - name: Сборка PBO (если доступен Addon Builder)
+        shell: pwsh
+        env:
+          ADDON_BUILDER_URL: ${{ secrets.ADDON_BUILDER_URL }}
+        run: |
+          if (-not $env:ADDON_BUILDER_URL) {
+            Write-Host "Addon Builder не задан — пропускаем сборку PBO. Соберите локально (см. README)."
+            exit 0
+          }
+
+          $tmp = "$env:TEMP\ab"
+          New-Item -ItemType Directory -Force $tmp | Out-Null
+          Invoke-WebRequest $env:ADDON_BUILDER_URL -OutFile "$tmp\ab.zip"
+          Expand-Archive "$tmp\ab.zip" -DestinationPath $tmp -Force
+
+          $ab = Get-ChildItem $tmp -Recurse -Filter AddonBuilder.exe | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $ab) { throw "AddonBuilder.exe не найден в архиве" }
+
+          foreach ($name in @('DayZPulseCore','DayZPulseAntiCheat')) {
+            & $ab "$PWD\$name" "$PWD\dist\mods\@DayZPulse\Addons" -clear -packonly
+            if ($LASTEXITCODE -ne 0) { throw "Не удалось собрать $name" }
+          }
+
+      - name: Мод-фолдер
+        uses: actions/upload-artifact@v4
+        with:
+          name: DayZPulse-Mod
+          path: dist/mods/@DayZPulse/**
+          if-no-files-found: warn
+
+      - name: Релиз (на тег)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/DayZPulse-Mod-src.zip
+          generate_release_notes: true
