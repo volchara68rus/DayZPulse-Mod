@@ -378,10 +378,12 @@ class PT_Tracker
 		payload += "\"players\":" + players.Count() + ",";
 		payload += "\"alive\":" + aliveCount + ",";
 
-		// Производительность сервера. GetFps() возвращает МИЛЛИСЕКУНДЫ на кадр,
-		// GetAvgFPS() — кадры в секунду: берём именно кадры.
-		float frameMs = GetGame().GetFps();
-		float fps = GetGame().GetAvgFPS();
+		// Производительность сервера. GetGame().GetAvgFPS()/GetFps() считают
+		// кадры РЕНДЕРА: на выделенном сервере рендера нет, и они отдают
+		// постоянный мусор (напр. 14.3). Настоящий серверный FPS — частота
+		// вызовов MissionServer.OnUpdate; её считает PT_FrameMonitor.
+		float fps = PT_FrameMonitor.Get();
+		float frameMs = PT_FrameMonitor.FrameMs();
 
 		payload += "\"fps\":" + PT_Util.Num(fps, 1) + ",";
 		payload += "\"fpsAvg\":" + PT_Util.Num(fps, 1) + ",";

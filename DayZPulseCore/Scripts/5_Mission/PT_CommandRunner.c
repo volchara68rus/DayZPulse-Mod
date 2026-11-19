@@ -536,11 +536,21 @@ class PT_CommandRunner
 		// Кровь — это зона урона (DamageSystem), а не PlayerStat.
 		player.SetHealth("", "Blood", player.GetMaxHealth("", "Blood"));
 
-		// Кровотечение и шок.
+		// Кровотечение снимаем сразу.
 		player.SetBleedingBits(0);
-		player.SetHealth("", "Shock", 0);
 
-		// Болезни и травмы, включая бессознательное состояние.
+		// ВАЖНО: зона "Shock" в DayZ работает «наоборот» — это НЕ урон, а
+		// устойчивость к обмороку. Мало шока (<=25) — игрок падает в унку,
+		// много (>=50) — в сознании. Для лечения шок нужно ЗАПОЛНИТЬ до
+		// максимума, иначе SetHealth("Shock", 0) сам валит игрока в унку.
+		player.SetHealth("", "Shock", player.GetMaxHealth("", "Shock"));
+
+		// Болезни и травмы, включая бессознательное состояние. DeactivateModifier()
+		// внутри делает m_ModifierList.Get(id).Deactivate() без проверки на null:
+		// если модификатор не зарегистрирован в этой версии игры (например,
+		// устаревший MDF_WOUND_INFECTION), движок бросает исключение и весь
+		// RestoreSurvival обрывается. Поэтому снимаем только активные модификаторы
+		// через GetModifier() с проверкой.
 		ModifiersManager mods = player.GetModifiersManager();
 
 		if (mods)
@@ -560,7 +570,10 @@ class PT_CommandRunner
 
 			foreach (int id : diseases)
 			{
-				mods.DeactivateModifier(id, false);
+				ModifierBase modifier = mods.GetModifier(id);
+
+				if (modifier && modifier.IsActive())
+					mods.DeactivateModifier(id, false);
 			}
 		}
 
@@ -841,13 +854,14 @@ class PT_CommandRunner
 
 	// Слоты экипировки персонажа (порядок как в интерфейсе игры).
 	// Имена — это имена Slot_<name> из DZ/data; их понимает GetSlotIdFromString.
+	// Важно: головной слот называется "Headgear" (а не "Head"), слота "Neck" у
+	// персонажа нет, зато есть "Armband".
 	static TStringArray EquipmentSlots()
 	{
 		TStringArray slots = new TStringArray();
-		slots.Insert("Head");
+		slots.Insert("Headgear");
 		slots.Insert("Mask");
 		slots.Insert("Eyewear");
-		slots.Insert("Neck");
 		slots.Insert("Body");
 		slots.Insert("Vest");
 		slots.Insert("Back");
@@ -855,6 +869,7 @@ class PT_CommandRunner
 		slots.Insert("Legs");
 		slots.Insert("Feet");
 		slots.Insert("Gloves");
+		slots.Insert("Armband");
 		return slots;
 	}
 

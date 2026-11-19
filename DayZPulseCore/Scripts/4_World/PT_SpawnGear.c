@@ -84,7 +84,6 @@ class PT_SpawnGear
 
 	protected ref PT_SpawnGearRules m_Rules;
 	protected ref array<string> m_Given;   // кому уже выдали в этой сессии
-	protected bool m_Loaded;
 
 	static const string FILE_PATH = "$profile:DayZPulseCore/spawngear.json";
 
@@ -101,15 +100,11 @@ class PT_SpawnGear
 		m_Given = new array<string>();
 	}
 
-	// Перечитывает файл один раз за сессию (панель пишет его при остановленном
-	// сервере, поэтому повторное чтение не требуется).
+	// Читает spawngear.json. Панель пишет файл на ходу (сервер при этом может
+	// быть запущен), поэтому читаем перед каждой выдачей, а не один раз за
+	// сессию — иначе правки из панели не подхватывались бы до перезапуска.
 	void Ensure()
 	{
-		if (m_Loaded)
-			return;
-
-		m_Loaded = true;
-
 		if (!FileExist(FILE_PATH))
 		{
 			m_Rules = null;
@@ -240,6 +235,9 @@ class PT_SpawnGear
 
 	protected void ApplyAssign(PlayerBase player, PT_SpawnGearAssign a)
 	{
+		int dressed = 0;
+		int put = 0;
+
 		// Надеть одежду по слотам.
 		foreach (PT_SpawnGearSlot slot : a.attachmentSlotItemSets)
 		{
@@ -252,10 +250,31 @@ class PT_SpawnGear
 				continue;
 
 			int slotId = InventorySlots.GetSlotIdFromString(slot.slotName);
+
+			if (slotId == InventorySlots.INVALID)
+			{
+				Print("[DayZPulseCore] spawngear: unknown slot '" + slot.slotName + "' (пропущено)");
+				continue;
+			}
+
+			// Слот мог быть занят ванильной одеждой (движок одевает персонажа
+			// до нас) — убираем её, иначе предмет не наденется.
+			EntityAI existing = player.GetInventory().FindAttachment(slotId);
+
+			if (existing)
+				GetGame().ObjectDelete(existing);
+
 			EntityAI worn = player.GetInventory().CreateAttachmentEx(chosen.itemType, slotId);
 
 			if (worn)
+			{
 				ApplyState(worn, chosen);
+				dressed++;
+			}
+			else
+			{
+				Print("[DayZPulseCore] spawngear: не удалось надеть '" + chosen.itemType + "' в слот '" + slot.slotName + "'");
+			}
 		}
 
 		// Предметы в инвентаре (карго первого уровня).
@@ -273,17 +292,25 @@ class PT_SpawnGear
 
 				EntityAI item = EntityAI.Cast(player.GetInventory().CreateInInventory(it.itemType));
 
-				if (item)
-					ApplyState(item, it);
+				if (!item)
+				{
+					Print("[DayZPulseCore] spawngear: не удалось положить '" + it.itemType + "' в карго");
+					continue;
+				}
+
+				ApplyState(item, it);
+				put++;
 
 				// Предметы быстрого доступа кладём на панель быстрого доступа.
-				if (item && it.quickBarSlot >= 0)
+				if (it.quickBarSlot >= 0)
 				{
 					player.SetQuickBarEntityShortcut(item, quickIndex, true);
 					quickIndex++;
 				}
 			}
 		}
+
+		Print("[DayZPulseCore] spawngear: набор применён (надето " + dressed + ", в карго " + put + ")");
 	}
 
 	protected PT_SpawnGearSlotItem Pick(array<ref PT_SpawnGearSlotItem> list)

@@ -20,8 +20,6 @@ modded class PlayerBase
 
 		if (!GetGame() || !GetGame().IsServer())
 			return;
-		if (!PT_Config.ENABLE_HTTP)
-			return;
 
 		float food = PT_Config.SPAWN_FOOD;
 		float water = PT_Config.SPAWN_WATER;

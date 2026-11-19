@@ -32,6 +32,11 @@ class PT_Events
 	// Частые операции (подбор предметов) иначе дёргали бы диск постоянно.
 	protected ref array<string> m_Queue;
 
+	// Кто уже записан вошедшим в этой сессии. Нужно, потому что вход мы
+	// фиксируем из двух мест (создание персонажа и готовность) — на разных
+	// конфигурациях вызывается то одно, то другое.
+	protected ref array<string> m_LoggedIn;
+
 	protected int m_Dropped;
 
 	static PT_Events Get()
@@ -45,6 +50,7 @@ class PT_Events
 	void PT_Events()
 	{
 		m_Queue = new array<string>();
+		m_LoggedIn = new array<string>();
 	}
 
 	// ------------------------------------------------------------------ запись ---
@@ -147,6 +153,18 @@ class PT_Events
 		if (!PT_Config.ENABLE_EVENTS || !identity)
 			return;
 
+		string key = identity.GetId();
+		if (key == "")
+			key = identity.GetPlainId();
+
+		// Защита от повторов: вход фиксируется из OnClientNewEvent и
+		// OnClientReadyEvent — на разных конфигурациях срабатывает один из них.
+		if (key != "" && m_LoggedIn.Find(key) >= 0)
+			return;
+
+		if (key != "")
+			m_LoggedIn.Insert(key);
+
 		string s = Line("session_in", identity.GetId(), identity.GetName());
 		s += ",\"steamId\":\"" + PT_Util.Escape(identity.GetPlainId()) + "\"";
 		s += "}";
@@ -159,6 +177,17 @@ class PT_Events
 	{
 		if (!PT_Config.ENABLE_EVENTS || !identity)
 			return;
+
+		string key = identity.GetId();
+		if (key == "")
+			key = identity.GetPlainId();
+
+		if (key != "")
+		{
+			int idx = m_LoggedIn.Find(key);
+			if (idx >= 0)
+				m_LoggedIn.Remove(idx);
+		}
 
 		string s = Line("session_out", identity.GetId(), identity.GetName());
 		s += ",\"steamId\":\"" + PT_Util.Escape(identity.GetPlainId()) + "\"";
