@@ -131,7 +131,7 @@ class PT_Events
 	// Время — миллисекунды с запуска движка (GetTime): абсолютного времени мод
 	// не знает. Панель при чтении строки сама проставляет точный момент
 	// (событие попадает в файл в пределах пары секунд от действия).
-	static string Line(string type, string id, string name)
+	string Line(string type, string id, string name)
 	{
 		string s = "{";
 		s += "\"t\":\"" + PT_Util.Escape(type) + "\"";
@@ -411,23 +411,21 @@ class PT_Events
 		string c = cls;
 		c.ToLower();
 
-		return
-			// Оружие и боеприпасы
-			c.Contains("weapon") || c.Contains("rifle") || c.Contains("pistol") ||
+		// Важно: выражение начинается на той же строке, что и return.
+		// Enforce Script считает перевод строки концом оператора, поэтому
+		// "return" отдельной строкой превращался в "return;" и ломал парсер.
+		return c.Contains("weapon") || c.Contains("rifle") || c.Contains("pistol") ||
 			c.Contains("shotgun") || c.Contains("sniper") || c.Contains("ammo") ||
 			c.Contains("magazine") || c.Contains("grenade") || c.Contains("explosive") ||
 			c.Contains("knife") || c.Contains("axe") || c.Contains("hatchet") ||
 			c.Contains("crowbar") || c.Contains("shovel") || c.Contains("sledge") ||
-			// Медицина
 			c.Contains("bandage") || c.Contains("saline") || c.Contains("morphine") ||
 			c.Contains("antibiotic") || c.Contains("charcoal") || c.Contains("painkiller") ||
 			c.Contains("epinephrine") || c.Contains("bloodbag") || c.Contains("syringe") ||
-			// Экипировка и контейнеры
 			c.Contains("backpack") || c.Contains("vest") || c.Contains("platecarrier") ||
 			c.Contains("helmet") || c.Contains("jacket") || c.Contains("pants") ||
 			c.Contains("boots") || c.Contains("gloves") || c.Contains("mask") ||
 			c.Contains("gorka") || c.Contains("tactical") || c.Contains("nvg") ||
-			// Снаряжение и инструменты
 			c.Contains("binocular") || c.Contains("compass") || c.Contains("gps") ||
 			c.Contains("radio") || c.Contains("tent") || c.Contains("barrel") ||
 			c.Contains("crate") || c.Contains("seachest") || c.Contains("codelock") ||
