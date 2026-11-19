@@ -405,30 +405,38 @@ class PT_Events
 	// ------------------------------------------------------------- фильтр ---
 
 	// Значимые предметы: оружие, патроны, медицина, инструменты, экипировка.
-	// Сравниваем по classname (нижний регистр) — быстро, без конфигов.
+	// Сравниваем подстроки по classname (нижний регистр). Список — массивом и
+	// циклом, а не длинным выражением: Enforce не разбирает цепочку из
+	// нескольких десятков "||" и падает на середине ("Missing ';'").
 	protected bool PT_EventsIsSignificant(string cls)
 	{
 		string c = cls;
 		c.ToLower();
 
-		// Важно: выражение начинается на той же строке, что и return.
-		// Enforce Script считает перевод строки концом оператора, поэтому
-		// "return" отдельной строкой превращался в "return;" и ломал парсер.
-		return c.Contains("weapon") || c.Contains("rifle") || c.Contains("pistol") ||
-			c.Contains("shotgun") || c.Contains("sniper") || c.Contains("ammo") ||
-			c.Contains("magazine") || c.Contains("grenade") || c.Contains("explosive") ||
-			c.Contains("knife") || c.Contains("axe") || c.Contains("hatchet") ||
-			c.Contains("crowbar") || c.Contains("shovel") || c.Contains("sledge") ||
-			c.Contains("bandage") || c.Contains("saline") || c.Contains("morphine") ||
-			c.Contains("antibiotic") || c.Contains("charcoal") || c.Contains("painkiller") ||
-			c.Contains("epinephrine") || c.Contains("bloodbag") || c.Contains("syringe") ||
-			c.Contains("backpack") || c.Contains("vest") || c.Contains("platecarrier") ||
-			c.Contains("helmet") || c.Contains("jacket") || c.Contains("pants") ||
-			c.Contains("boots") || c.Contains("gloves") || c.Contains("mask") ||
-			c.Contains("gorka") || c.Contains("tactical") || c.Contains("nvg") ||
-			c.Contains("binocular") || c.Contains("compass") || c.Contains("gps") ||
-			c.Contains("radio") || c.Contains("tent") || c.Contains("barrel") ||
-			c.Contains("crate") || c.Contains("seachest") || c.Contains("codelock") ||
-			c.Contains("battery") || c.Contains("generator") || c.Contains("kit");
+		string keys[] = {
+			// Оружие и боеприпасы
+			"weapon", "rifle", "pistol", "shotgun", "sniper", "ammo",
+			"magazine", "grenade", "explosive", "knife", "axe", "hatchet",
+			"crowbar", "shovel", "sledge",
+			// Медицина
+			"bandage", "saline", "morphine", "antibiotic", "charcoal",
+			"painkiller", "epinephrine", "bloodbag", "syringe",
+			// Экипировка и контейнеры
+			"backpack", "vest", "platecarrier", "helmet", "jacket", "pants",
+			"boots", "gloves", "mask", "gorka", "tactical", "nvg",
+			// Снаряжение и инструменты
+			"binocular", "compass", "gps", "radio", "tent", "barrel",
+			"crate", "seachest", "codelock", "battery", "generator", "kit"
+		};
+
+		foreach (string key : keys)
+		{
+			if (c.Contains(key))
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 }

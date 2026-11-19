@@ -1,11 +1,15 @@
 // ============================================================================
-//  PlayerTracker - хуки ItemBase и построек.
+//  PlayerTracker - хуки ItemBase.
 //
-//  EECargoIn/EECargoOut вызываются на контейнере (рюкзак, ящик, палатка…),
-//  когда предмет кладут или достают. Владельца берём по иерархии: если
-//  контейнер внутри игрока (рюкзак за спиной) — это его действие.
+//  Мод модифицирует только ItemBase (класс модуля 4_World). Модифицировать
+//  EntityAI нельзя: он объявлен в модуле 3_Game, и World-модуль его не видит
+//  как точку расширения ("Unknown type 'EntityAI'").
 //
-//  OnPlacementComplete — установка объекта игроком (палатка, бочка, постройка).
+//  EECargoIn/EECargoOut — предмет положили в контейнер и достали обратно.
+//  Владельца берём по иерархии: если контейнер внутри игрока (рюкзак за
+//  спиной) — это его действие.
+//
+//  OnPlacementComplete — установка объекта игроком (палатка, бочка, ящик).
 // ============================================================================
 
 modded class ItemBase
@@ -31,11 +35,8 @@ modded class ItemBase
 		if (owner)
 			PT_Events.Get().ItemEvent("item_cargo_out", item, owner, "");
 	}
-}
 
-modded class EntityAI
-{
-	// Игрок установил объект (палатка, бочка, флаг, постройка).
+	// Игрок установил объект (палатка, бочка, ящик, набор).
 	override void OnPlacementComplete(Man player, vector position = "0 0 0", vector orientation = "0 0 0")
 	{
 		super.OnPlacementComplete(player, position, orientation);
@@ -59,7 +60,7 @@ modded class EntityAI
 	}
 }
 
-// Постройки с основанием (забор, вышка, флаг): сборка и разбор частей.
+// Постройки с основанием (забор, вышка, флаг): сборка, разбор и снос частей.
 modded class BaseBuildingBase
 {
 	// Игрок построил часть (стену, ступени, ворота).
@@ -87,4 +88,3 @@ modded class BaseBuildingBase
 			PT_Events.Get().BuildPartEvent("destroy", this, player, part_name);
 	}
 }
-
