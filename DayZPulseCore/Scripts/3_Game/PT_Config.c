@@ -26,6 +26,11 @@ class PT_ConfigData
 	bool   ENABLE_INVENTORY;
 	string INVENTORY_URL;
 
+	// Журнал событий (файловый режим): вход/выход, киллы, предметы, постройки.
+	bool   ENABLE_EVENTS;
+	string EVENTS_ITEM_MODE;   // all | significant | none
+	int    EVENTS_MAX_QUEUE;
+
 	string API_TOKEN;
 	string SERVER_ID;
 	bool   INCLUDE_PLAIN_ID;
@@ -52,6 +57,10 @@ class PT_ConfigData
 
 		ENABLE_INVENTORY     = true;
 		INVENTORY_URL        = "http://127.0.0.1:8730/tracker/inventory";
+
+		ENABLE_EVENTS        = true;
+		EVENTS_ITEM_MODE     = "significant";
+		EVENTS_MAX_QUEUE     = 500;
 
 		API_TOKEN            = "";
 		SERVER_ID            = "cherno";
@@ -80,6 +89,9 @@ class PT_Config
 	static string ACK_URL;
 	static bool   ENABLE_INVENTORY;
 	static string INVENTORY_URL;
+	static bool   ENABLE_EVENTS;
+	static string EVENTS_ITEM_MODE;
+	static int    EVENTS_MAX_QUEUE;
 	static string API_TOKEN;
 	static string SERVER_ID;
 	static bool   INCLUDE_PLAIN_ID;
@@ -96,6 +108,7 @@ class PT_Config
 	static const string CONFIG_FILE = "$profile:DayZPulseCore/config.json";
 	static const string FILE_DIR    = "$profile:DayZPulseCore";
 	static const string FILE_PATH   = "$profile:DayZPulseCore/players.json";
+	static const string EVENT_LOG   = "$profile:DayZPulseCore/events.jsonl";
 	static const string PRESET_DIR  = "$profile:DayZPulseCore/presets";
 
 	// Читает config.json (создаёт с настройками по умолчанию, если файла нет).
@@ -128,6 +141,9 @@ class PT_Config
 		ACK_URL              = data.ACK_URL;
 		ENABLE_INVENTORY     = data.ENABLE_INVENTORY;
 		INVENTORY_URL        = data.INVENTORY_URL;
+		ENABLE_EVENTS        = data.ENABLE_EVENTS;
+		EVENTS_ITEM_MODE     = data.EVENTS_ITEM_MODE;
+		EVENTS_MAX_QUEUE     = data.EVENTS_MAX_QUEUE;
 		API_TOKEN            = data.API_TOKEN;
 		SERVER_ID            = data.SERVER_ID;
 		INCLUDE_PLAIN_ID     = data.INCLUDE_PLAIN_ID;

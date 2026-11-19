@@ -182,6 +182,10 @@ class PT_Tracker
 
 		if (PT_Config.ENABLE_FILE)
 			WritePayload(payload);
+
+		// События игрока копятся в очереди и сбрасываются в файл раз в тик:
+		// так подбор предметов не дёргает диск на каждое действие.
+		PT_Events.Get().Flush();
 	}
 
 	// --------------------------------------------------------------- команды ---
@@ -325,7 +329,12 @@ class PT_Tracker
 			}
 
 			if (id == "")
-				id = "unknown_" + players.Find(man);
+			{
+				// Игрок без идентификатора: личность ещё не загрузилась или он
+				// отключается. В базу такое попадать не должно (иначе там
+				// копятся записи вида unknown_0) — пропускаем до следующего тика.
+				continue;
+			}
 
 			vector pos = pb.GetPosition();
 			vector ori = pb.GetOrientation();
@@ -530,9 +539,13 @@ class PT_Tracker
 	// ----------------------------------------------------------------- HTTP ---
 
 	// Отправка снимка инвентаря игрока на /tracker/inventory.
+	//
+	// Инвентарь шлём независимо от ENABLE_HTTP: он отправляется по запросу из
+	// панели (не каждый тик), поэтому не бьёт по FPS. Иначе в файловом режиме
+	// (ENABLE_HTTP=false) инвентарь вообще не доходил бы до панели.
 	void PostInventory(string name, string id, string itemsJson)
 	{
-		if (!PT_Config.ENABLE_HTTP || !PT_Config.ENABLE_INVENTORY)
+		if (!PT_Config.ENABLE_INVENTORY)
 			return;
 
 		if (!m_Api)

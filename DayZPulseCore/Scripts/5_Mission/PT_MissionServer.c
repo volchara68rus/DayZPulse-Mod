@@ -24,6 +24,15 @@ modded class MissionServer
 		super.OnClientReadyEvent(identity, player);
 
 		PT_SpawnGear.Get().ApplyFor(player);
+		PT_Events.Get().OnPlayerConnected(identity, player);
+	}
+
+	// Игрок отключился.
+	override void OnClientDisconnectedEvent(PlayerIdentity identity, PlayerBase player, int logoutTime, bool authFailed)
+	{
+		PT_Events.Get().OnPlayerDisconnected(identity, player);
+
+		super.OnClientDisconnectedEvent(identity, player, logoutTime, authFailed);
 	}
 
 	// Игрок возродился после смерти — разрешаем выдать набор снова.
