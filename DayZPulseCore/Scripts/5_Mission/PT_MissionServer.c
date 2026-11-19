@@ -28,16 +28,6 @@ modded class MissionServer
 		super.OnMissionFinish();
 	}
 
-	// Каждый кадр сервера. Служит для честного замера FPS: движковые
-	// GetAvgFPS()/GetFps() считают кадры рендера и на выделенном сервере
-	// отдают мусор (см. PT_FrameMonitor).
-	override void OnUpdate(float timeslice)
-	{
-		super.OnUpdate(timeslice);
-
-		PT_FrameMonitor.OnUpdate(timeslice);
-	}
-
 	// Персонаж только что создан (первый вход и возрождение после смерти).
 	override PlayerBase OnClientNewEvent(PlayerIdentity identity, vector pos, ParamsReadContext ctx)
 	{
